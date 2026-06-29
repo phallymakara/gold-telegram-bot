@@ -1,0 +1,61 @@
+import logging
+from app.services.google_client import slots_sheet
+
+logger = logging.getLogger(__name__)
+
+
+def get_active_slots():
+    rows = slots_sheet.get_all_records()
+
+    return [
+        row for row in rows
+        if str(row["active"]).upper() == "YES"
+    ]
+
+
+def get_slot_by_date(slot_date: str):
+    rows = slots_sheet.get_all_records()
+
+    target_date = str(slot_date).strip()
+
+    for row in rows:
+        sheet_date = str(row["slot_date"]).strip()
+
+        if sheet_date == target_date:
+            return row
+
+    logger.warning(
+        "Slot not found | target=%r | available=%s",
+        target_date,
+        [str(row["slot_date"]).strip() for row in rows],
+    )
+
+    return None
+    
+
+
+def check_stock(slot_date: str, quantity: float):
+    slot = get_slot_by_date(slot_date)
+
+    if not slot:
+        return False
+
+    return float(slot["stock_kg"]) >= quantity
+
+
+def deduct_stock(slot_date: str, quantity: float):
+    rows = slots_sheet.get_all_records()
+
+    target_date = str(slot_date).strip()
+
+    for idx, row in enumerate(rows, start=2):
+        sheet_date = str(row["slot_date"]).strip()
+
+        if sheet_date == target_date:
+            current_stock = float(row["stock_kg"])
+            new_stock = current_stock - quantity
+
+            slots_sheet.update(f"C{idx}", [[new_stock]])
+            return True
+
+    return False
