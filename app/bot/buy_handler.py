@@ -1,7 +1,10 @@
 from telegram import Update
 from telegram.ext import ContextTypes
+from telegram.error import BadRequest
+from app.utils.translation import t
 
 from app.bot.keyboards import (
+    MAIN_MENU,
     build_slot_keyboard,
     build_quantity_keyboard,
     build_confirmation_keyboard,
@@ -19,14 +22,16 @@ from app.services.slot_service import (
 )
 
 from app.services.order_service import place_buy_order, place_sell_order
+from app.utils.helpers import format_premium
 
 
-async def handle_buy(query):
-    slots = get_active_slots()
+async def handle_buy(query, context: ContextTypes.DEFAULT_TYPE):
+    lang = context.user_data.get("lang", "EN")
+    slots = get_active_slots(order_type="BUY")
 
-    await query.edit_message_text(
-        BUY_SLOT_MESSAGE,
-        reply_markup=build_slot_keyboard(slots, order_type="BUY"),
+    await query.message.reply_text(
+        t("buy_slots_title", lang),
+        reply_markup=build_slot_keyboard(slots, order_type="BUY", lang=lang),
     )
 
 
@@ -70,7 +75,7 @@ async def handle_quantity_selection(query, context: ContextTypes.DEFAULT_TYPE):
         "📋 Order Summary\n\n"
         f"Type: {order_type}\n"
         f"Slot: {selected_slot}\n"
-        f"Premium: +{slot['premium']}\n"
+        f"Premium: {format_premium(slot['premium'])}\n"
         f"Quantity: {quantity} kg\n\n"
         "Please confirm your order.",
         reply_markup=build_confirmation_keyboard(selected_slot),
@@ -115,8 +120,9 @@ async def handle_confirm_order(
             f"Order ID: {order['order_id']}\n"
             f"Type: {order['order_type']}\n"
             f"Slot: {order['slot_date']}\n"
-            f"Premium: +{order['premium']}\n"
-            f"Quantity: {order['quantity_kg']} kg"
+            f"Premium: {format_premium(order['premium'])}\n"
+            f"Quantity: {order['quantity_kg']} kg",
+            reply_markup=MAIN_MENU
         )
 
     except ValueError as error:

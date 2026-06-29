@@ -68,7 +68,7 @@ def place_sell_order(
     slot_date: str,
     quantity: float,
 ):
-    slot = get_slot_by_date(slot_date)
+    slot = get_slot_by_date(slot_date, "SELL")
 
     if not slot:
         logger.warning("SELL failed: slot not found | slot=%s", slot_date)

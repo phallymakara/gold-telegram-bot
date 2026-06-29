@@ -25,21 +25,16 @@ from app.bot.order_handler import (
 )
 
 from app.bot.keyboards import (
-    MAIN_MENU,
+    LANG_MENU,
+    build_main_menu,
     build_slot_keyboard,
     build_quantity_keyboard,
     build_confirmation_keyboard,
     build_back_main_keyboard,
 )
-from app.bot.messages import (
-    WELCOME_MESSAGE,
-    BUY_SLOT_MESSAGE,
-    SELL_NOT_READY_MESSAGE,
-    ORDER_CANCELLED_MESSAGE,
-    SESSION_EXPIRED_MESSAGE,
-    SLOT_NOT_FOUND_MESSAGE,
-)
+from app.utils.translation import t
 from app.services.order_service import place_buy_order, place_sell_order
+from app.services.whitelist_service import restricted
 
 from app.constants.callback import (
     BUY,
@@ -54,13 +49,16 @@ from app.constants.callback import (
 )
 
 
+@restricted
 async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    context.user_data.clear()
     await update.message.reply_text(
-        WELCOME_MESSAGE,
-        reply_markup=MAIN_MENU,
+        t("choose_lang", "EN"),
+        reply_markup=LANG_MENU,
     )
 
 
+@restricted
 async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
 
@@ -69,8 +67,22 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     except BadRequest:
         pass
 
-    if query.data == BUY:   
-        await handle_buy(query)
+    if query.data.startswith("LANG_"):
+        lang = query.data.replace("LANG_", "")
+        context.user_data["lang"] = lang
+        await query.message.reply_text(
+            t("welcome", lang),
+            reply_markup=build_main_menu(lang),
+        )
+
+    elif query.data == "SWITCH_LANG":
+        await query.message.reply_text(
+            t("choose_lang", "EN"),
+            reply_markup=LANG_MENU,
+        )
+
+    elif query.data == BUY:   
+        await handle_buy(query, context)
 
     elif query.data.startswith(BUY_SLOT_PREFIX) or query.data.startswith(SELL_SLOT_PREFIX):
         await handle_slot_selection(query, context)
@@ -88,22 +100,24 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await handle_back_main(query, context)
 
     elif query.data == SELL:
-        await handle_sell(query)
+        await handle_sell(query, context)
 
     elif query.data == MY_ORDERS:
-        await handle_my_orders(update, query)
+        await handle_my_orders(update, query, context)
 
 
 async def handle_cancel_order(query, context: ContextTypes.DEFAULT_TYPE):
+    lang = context.user_data.get("lang", "EN")
     context.user_data.clear()
-    await query.edit_message_text(ORDER_CANCELLED_MESSAGE)
+    context.user_data["lang"] = lang
+    await query.message.reply_text(t("order_cancelled", lang))
 
 
 async def handle_back_main(query, context: ContextTypes.DEFAULT_TYPE):
+    lang = context.user_data.get("lang", "EN")
     context.user_data.clear()
-
-    await query.edit_message_text(
-        WELCOME_MESSAGE,
-        reply_markup=MAIN_MENU,
+    context.user_data["lang"] = lang
+    await query.message.reply_text(
+        t("welcome", lang),
+        reply_markup=build_main_menu(lang),
     )
-

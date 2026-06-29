@@ -1,5 +1,5 @@
 WELCOME_MESSAGE = (
-    "Welcome to Gold Trading Bot 🚀\n\n"
+    "Welcome to Gold Trading Bot \n\n"
     "Please choose an option:"
 )
 

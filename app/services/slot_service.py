@@ -1,11 +1,12 @@
 import logging
-from app.services.google_client import slots_sheet
+from app.services.google_client import slots_sheet, sell_slots_sheet
 
 logger = logging.getLogger(__name__)
 
 
-def get_active_slots():
-    rows = slots_sheet.get_all_records()
+def get_active_slots(order_type: str = "BUY"):
+    sheet = sell_slots_sheet if order_type == "SELL" else slots_sheet
+    rows = sheet.get_all_records()
 
     return [
         row for row in rows
@@ -13,8 +14,9 @@ def get_active_slots():
     ]
 
 
-def get_slot_by_date(slot_date: str):
-    rows = slots_sheet.get_all_records()
+def get_slot_by_date(slot_date: str, order_type: str = "BUY"):
+    sheet = sell_slots_sheet if order_type == "SELL" else slots_sheet
+    rows = sheet.get_all_records()
 
     target_date = str(slot_date).strip()
 
@@ -25,8 +27,9 @@ def get_slot_by_date(slot_date: str):
             return row
 
     logger.warning(
-        "Slot not found | target=%r | available=%s",
+        "Slot not found | target=%r | order_type=%s | available=%s",
         target_date,
+        order_type,
         [str(row["slot_date"]).strip() for row in rows],
     )
 
