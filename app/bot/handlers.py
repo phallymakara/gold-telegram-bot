@@ -129,14 +129,22 @@ async def handle_cancel_order(query, context: ContextTypes.DEFAULT_TYPE):
     lang = context.user_data.get("lang", "EN")
     context.user_data.clear()
     context.user_data["lang"] = lang
-    await query.edit_message_text(text=t("order_cancelled", lang))
+    try:
+        await query.edit_message_text(text=t("order_cancelled", lang))
+    except BadRequest as e:
+        if "Message is not modified" not in str(e):
+            raise
 
 
 async def handle_back_main(query, context: ContextTypes.DEFAULT_TYPE):
     lang = context.user_data.get("lang", "EN")
     context.user_data.clear()
     context.user_data["lang"] = lang
-    await query.edit_message_text(
-        text=t("welcome", lang),
-        reply_markup=build_main_menu(lang),
-    )
+    try:
+        await query.edit_message_text(
+            text=t("welcome", lang),
+            reply_markup=build_main_menu(lang),
+        )
+    except BadRequest as e:
+        if "Message is not modified" not in str(e):
+            raise

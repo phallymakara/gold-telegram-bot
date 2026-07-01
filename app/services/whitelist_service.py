@@ -26,7 +26,7 @@ def get_whitelist_sheet():
         sheet.append_row(["username", "telegram_id"])
         return sheet
 
-def load_whitelist(force_refresh=False) -> set:
+async def load_whitelist(force_refresh=False) -> set:
     global _cached_users, _last_fetch_time
     current_time = time.time()
     
@@ -35,7 +35,7 @@ def load_whitelist(force_refresh=False) -> set:
         
     try:
         sheet = get_whitelist_sheet()
-        records = sheet.get_all_records()
+        records = await asyncio.to_thread(sheet.get_all_records)
         
         allowed = set()
         # Cap to MAX_USERS to guarantee memory stays low
@@ -57,8 +57,8 @@ def load_whitelist(force_refresh=False) -> set:
         
     return _cached_users
 
-def is_user_allowed(username: str, telegram_id: str) -> bool:
-    allowed_list = load_whitelist()
+async def is_user_allowed(username: str, telegram_id: str) -> bool:
+    allowed_list = await load_whitelist()
     
     clean_username = username.strip().lower().lstrip("@") if username else ""
     str_tg_id = str(telegram_id).strip()
@@ -75,10 +75,14 @@ def restricted(func):
         if not user:
             return
             
-        username = user.username
+        username = user.username or ""
         telegram_id = str(user.id)
         
-        if not is_user_allowed(username, telegram_id):
+        allowed_list = await load_whitelist()
+        clean_username = username.strip().lower().lstrip("@") if username else ""
+        str_tg_id = str(telegram_id).strip()
+        
+        if not ((clean_username in allowed_list) or (str_tg_id in allowed_list)):
             logger.warning(
                 "Unauthorized access attempt blocked | user_id=%s | username=%s",
                 telegram_id,
@@ -97,8 +101,9 @@ def restricted(func):
                 await update.message.reply_text(unauth_msg)
             return
             
-        # Automatically populate the telegram ID in the Whitelist sheet if it's missing
-        populate_telegram_id_if_blank(username, telegram_id)
+        # Automatically populate the telegram ID in the Whitelist sheet if it's missing from the whitelist cache
+        if str_tg_id not in allowed_list:
+            populate_telegram_id_if_blank(username, telegram_id)
         
         return await func(update, context, *args, **kwargs)
     return wrapper

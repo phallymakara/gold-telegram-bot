@@ -175,13 +175,14 @@ def parse_datetime(date_str, time_str) -> datetime:
         
     return datetime.combine(parsed_date, parsed_time)
 
-def get_all_users() -> set:
+async def get_all_users() -> set:
     user_ids = set()
     
     # 1. From Whitelist
     try:
         whitelist_sheet = spreadsheet.worksheet("Whitelist")
-        for row in whitelist_sheet.get_all_records():
+        records = await asyncio.to_thread(whitelist_sheet.get_all_records)
+        for row in records:
             tg_id = str(row.get("telegram_id", "")).strip()
             if tg_id:
                 user_ids.add(tg_id)
@@ -191,7 +192,8 @@ def get_all_users() -> set:
     # 2. From Orders
     try:
         orders_sheet = spreadsheet.worksheet("Orders")
-        for row in orders_sheet.get_all_records():
+        records = await asyncio.to_thread(orders_sheet.get_all_records)
+        for row in records:
             tg_id = str(row.get("telegram_id", "")).strip()
             if tg_id:
                 user_ids.add(tg_id)
@@ -201,7 +203,8 @@ def get_all_users() -> set:
     # 3. From Sell Orders
     try:
         sell_orders_sheet = spreadsheet.worksheet("Sell Orders")
-        for row in sell_orders_sheet.get_all_records():
+        records = await asyncio.to_thread(sell_orders_sheet.get_all_records)
+        for row in records:
             tg_id = str(row.get("telegram_id", "")).strip()
             if tg_id:
                 user_ids.add(tg_id)
@@ -211,8 +214,8 @@ def get_all_users() -> set:
     return user_ids
 
 async def check_and_send_promotions(application: Application):
-    sheet = get_promotions_sheet()
-    records = sheet.get_all_records()
+    sheet = await asyncio.to_thread(get_promotions_sheet)
+    records = await asyncio.to_thread(sheet.get_all_records)
     
     current_time = datetime.now()
     
@@ -237,15 +240,15 @@ async def check_and_send_promotions(application: Application):
         # Skip if too old (older than 24 hours) to prevent spamming on bot boot
         if (current_time - scheduled_dt).total_seconds() > 86400:
             logger.info("Row %d: Skip sending promotion because scheduled time is too far in the past: %s", idx, scheduled_dt)
-            sheet.update(f"D{idx}", [["EXPIRED"]])
+            await asyncio.to_thread(sheet.update, f"D{idx}", [["EXPIRED"]])
             continue
             
         # Check if the scheduled time has arrived or passed
         if current_time >= scheduled_dt:
             logger.info("Row %d: Broadcasting promotion: '%s'", idx, message_text)
-            sheet.update(f"D{idx}", [["SENDING"]])
+            await asyncio.to_thread(sheet.update, f"D{idx}", [["SENDING"]])
             
-            user_ids = get_all_users()
+            user_ids = await get_all_users()
             sent_count = 0
             
             for tg_id in user_ids:
@@ -261,7 +264,7 @@ async def check_and_send_promotions(application: Application):
                 await asyncio.sleep(0.05)
                 
             logger.info("Promotion broadcast finished. Sent to %d/%d users.", sent_count, len(user_ids))
-            sheet.update(f"D{idx}", [["SENT"]])
+            await asyncio.to_thread(sheet.update, f"D{idx}", [["SENT"]])
 
 async def promotions_loop(application: Application):
     logger.info("Promotions background loop started")

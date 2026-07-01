@@ -1,12 +1,13 @@
+import asyncio
 import logging
 from app.services.google_client import slots_sheet, sell_slots_sheet
 
 logger = logging.getLogger(__name__)
 
 
-def get_active_slots(order_type: str = "BUY"):
+async def get_active_slots(order_type: str = "BUY"):
     sheet = sell_slots_sheet if order_type == "SELL" else slots_sheet
-    rows = sheet.get_all_records()
+    rows = await asyncio.to_thread(sheet.get_all_records)
 
     return [
         row for row in rows
@@ -14,9 +15,9 @@ def get_active_slots(order_type: str = "BUY"):
     ]
 
 
-def get_slot_by_date(slot_date: str, order_type: str = "BUY"):
+async def get_slot_by_date(slot_date: str, order_type: str = "BUY"):
     sheet = sell_slots_sheet if order_type == "SELL" else slots_sheet
-    rows = sheet.get_all_records()
+    rows = await asyncio.to_thread(sheet.get_all_records)
 
     target_date = str(slot_date).strip()
 
@@ -34,11 +35,10 @@ def get_slot_by_date(slot_date: str, order_type: str = "BUY"):
     )
 
     return None
-    
 
 
-def check_stock(slot_date: str, quantity: float):
-    slot = get_slot_by_date(slot_date)
+async def check_stock(slot_date: str, quantity: float):
+    slot = await get_slot_by_date(slot_date)
 
     if not slot:
         return False
@@ -46,8 +46,8 @@ def check_stock(slot_date: str, quantity: float):
     return float(slot["stock_kg"]) >= quantity
 
 
-def deduct_stock(slot_date: str, quantity: float):
-    rows = slots_sheet.get_all_records()
+async def deduct_stock(slot_date: str, quantity: float):
+    rows = await asyncio.to_thread(slots_sheet.get_all_records)
 
     target_date = str(slot_date).strip()
 
@@ -58,7 +58,7 @@ def deduct_stock(slot_date: str, quantity: float):
             current_stock = float(row["stock_kg"])
             new_stock = current_stock - quantity
 
-            slots_sheet.update(f"C{idx}", [[new_stock]])
+            await asyncio.to_thread(slots_sheet.update, f"C{idx}", [[new_stock]])
             return True
 
     return False

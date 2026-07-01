@@ -48,7 +48,7 @@ async def handle_slot_selection(query, context: ContextTypes.DEFAULT_TYPE):
     type_str = t("buy", lang) if order_type == BUY else t("sell", lang)
     msg = t("selected_slot", lang).format(type=type_str, date=slot_date)
 
-    slot = get_slot_by_date(slot_date, order_type)
+    slot = await get_slot_by_date(slot_date, order_type)
     stock = slot.get("stock_kg", 0) if slot else 0
     logger.info("handle_slot_selection | slot_date=%s | order_type=%s | slot=%s | stock=%s", slot_date, order_type, slot, stock)
 
@@ -56,10 +56,14 @@ async def handle_slot_selection(query, context: ContextTypes.DEFAULT_TYPE):
         await query.answer(t("slot_out_of_stock", lang), show_alert=True)
         return
 
-    await query.edit_message_text(
-        text=msg,
-        reply_markup=build_quantity_keyboard(stock=stock, order_type=order_type, lang=lang),
-    )
+    try:
+        await query.edit_message_text(
+            text=msg,
+            reply_markup=build_quantity_keyboard(stock=stock, order_type=order_type, lang=lang),
+        )
+    except BadRequest as e:
+        if "Message is not modified" not in str(e):
+            raise
 
 
 async def handle_quantity_selection(query, context: ContextTypes.DEFAULT_TYPE):
@@ -73,7 +77,7 @@ async def handle_quantity_selection(query, context: ContextTypes.DEFAULT_TYPE):
         await query.message.reply_text(t("session_expired", lang))
         return
 
-    slot = get_slot_by_date(selected_slot, order_type)
+    slot = await get_slot_by_date(selected_slot, order_type)
 
     if not slot:
         await query.message.reply_text(t("slot_not_found", lang))
@@ -90,10 +94,14 @@ async def handle_quantity_selection(query, context: ContextTypes.DEFAULT_TYPE):
         f"{t('confirm_prompt', lang)}"
     )
 
-    await query.edit_message_text(
-        text=summary,
-        reply_markup=build_confirmation_keyboard(selected_slot, order_type, lang),
-    )
+    try:
+        await query.edit_message_text(
+            text=summary,
+            reply_markup=build_confirmation_keyboard(selected_slot, order_type, lang),
+        )
+    except BadRequest as e:
+        if "Message is not modified" not in str(e):
+            raise
 
 
 async def handle_confirm_order(
@@ -114,14 +122,14 @@ async def handle_confirm_order(
 
     try:
         if order_type == BUY:
-            order = place_buy_order(
+            order = await place_buy_order(
                 telegram_id=str(user.id),
                 username=user.username or user.first_name or "unknown",
                 slot_date=selected_slot,
                 quantity=quantity,
             )
         else:
-            order = place_sell_order(
+            order = await place_sell_order(
                 telegram_id=str(user.id),
                 username=user.username or user.first_name or "unknown",
                 slot_date=selected_slot,
@@ -133,7 +141,11 @@ async def handle_confirm_order(
 
         # Edit the confirmation message in-place to remove the confirmation buttons and show success text
         confirmed_text = t("order_confirmed", lang).strip()
-        await query.edit_message_text(text=f"{confirmed_text}\n{t('order_id', lang)}: {order.order_id}")
+        try:
+            await query.edit_message_text(text=f"{confirmed_text}\n{t('order_id', lang)}: {order.order_id}")
+        except BadRequest as e:
+            if "Message is not modified" not in str(e):
+                raise
 
         success_msg = generate_invoice_text(order, user)
 

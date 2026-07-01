@@ -15,14 +15,33 @@ creds = Credentials.from_service_account_file(
 client = gspread.authorize(creds)
 spreadsheet = client.open_by_key(SPREADSHEET_ID)
 
-slots_sheet = spreadsheet.worksheet("Slots")
+try:
+    slots_sheet = spreadsheet.worksheet("Slots")
+except gspread.exceptions.WorksheetNotFound:
+    slots_sheet = spreadsheet.add_worksheet(title="Slots", rows="100", cols="5")
+    slots_sheet.append_row(["slot_date", "premium", "stock_kg", "min_order", "active"])
 
 try:
     sell_slots_sheet = spreadsheet.worksheet("Sell_Slots")
 except gspread.exceptions.WorksheetNotFound:
     sell_slots_sheet = spreadsheet.add_worksheet(title="Sell_Slots", rows="100", cols="5")
     sell_slots_sheet.append_row(["slot_date", "premium", "stock_kg", "min_order", "active"])
-orders_sheet = spreadsheet.worksheet("Orders")
+
+try:
+    orders_sheet = spreadsheet.worksheet("Orders")
+except gspread.exceptions.WorksheetNotFound:
+    orders_sheet = spreadsheet.add_worksheet(title="Orders", rows="1000", cols="9")
+    orders_sheet.append_row([
+        "order_id",
+        "telegram_id",
+        "username",
+        "order_type",
+        "slot_date",
+        "premium",
+        "quantity_kg",
+        "status",
+        "created_at"
+    ])
 
 try:
     sell_orders_sheet = spreadsheet.worksheet("Sell Orders")

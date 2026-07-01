@@ -6,7 +6,7 @@ from app.utils.translation import t
 
 async def handle_sell(query, context: ContextTypes.DEFAULT_TYPE):
     lang = context.user_data.get("lang", "EN")
-    slots = get_active_slots(order_type="SELL")
+    slots = await get_active_slots(order_type="SELL")
 
     await query.message.reply_text(
         t("sell_slots_title", lang),

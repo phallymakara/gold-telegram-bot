@@ -1,3 +1,4 @@
+import asyncio
 from datetime import datetime
 import requests
 
@@ -5,9 +6,10 @@ from app.services.google_client import orders_sheet, sell_orders_sheet
 from app.models.order import Order
 
 
-def create_order(order: Order):
+async def create_order(order: Order):
     sheet = sell_orders_sheet if order.order_type == "SELL" else orders_sheet
-    sheet.append_row(
+    await asyncio.to_thread(
+        sheet.append_row,
         [
             order.order_id,
             order.telegram_id,
@@ -24,10 +26,10 @@ def create_order(order: Order):
     )
 
 
-def get_orders_by_telegram_id(telegram_id: str):
+async def get_orders_by_telegram_id(telegram_id: str):
     try:
-        buy_rows = orders_sheet.get_all_records()
-        sell_rows = sell_orders_sheet.get_all_records()
+        buy_rows = await asyncio.to_thread(orders_sheet.get_all_records)
+        sell_rows = await asyncio.to_thread(sell_orders_sheet.get_all_records)
 
         user_buy_orders = [
             row for row in buy_rows

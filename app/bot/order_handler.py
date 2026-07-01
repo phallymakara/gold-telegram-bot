@@ -11,7 +11,7 @@ async def handle_my_orders(update: Update, query, context: ContextTypes.DEFAULT_
     lang = context.user_data.get("lang", "EN")
     user = update.effective_user
 
-    orders = get_orders_by_telegram_id(str(user.id))
+    orders = await get_orders_by_telegram_id(str(user.id))
 
     if not orders:
         await query.message.reply_text(
