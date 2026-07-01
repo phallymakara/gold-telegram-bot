@@ -48,3 +48,4 @@ dist/
 
 # uv
 .python-versionservice_account.json
+persistence.pickle
