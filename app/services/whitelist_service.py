@@ -1,3 +1,4 @@
+import asyncio
 import time
 import logging
 from functools import wraps
@@ -96,5 +97,34 @@ def restricted(func):
                 await update.message.reply_text(unauth_msg)
             return
             
+        # Automatically populate the telegram ID in the Whitelist sheet if it's missing
+        populate_telegram_id_if_blank(username, telegram_id)
+        
         return await func(update, context, *args, **kwargs)
     return wrapper
+
+def _sync_populate_telegram_id_if_blank(username: str, telegram_id: str):
+    if not username:
+        return
+    
+    clean_username = username.strip().lower().lstrip("@")
+    str_tg_id = str(telegram_id).strip()
+    
+    try:
+        sheet = get_whitelist_sheet()
+        records = sheet.get_all_records()
+        
+        for idx, row in enumerate(records, start=2):
+            sheet_username = str(row.get("username", "")).strip().lower().lstrip("@")
+            sheet_tg_id = str(row.get("telegram_id", "")).strip()
+            
+            if sheet_username == clean_username and not sheet_tg_id:
+                sheet.update(f"B{idx}", [[str_tg_id]])
+                logger.info("Automatically populated telegram_id for user %s -> %s on row %d", username, telegram_id, idx)
+                load_whitelist(force_refresh=True)
+                break
+    except Exception as e:
+        logger.error("Failed to populate telegram_id for %s: %s", username, e)
+
+def populate_telegram_id_if_blank(username: str, telegram_id: str):
+    asyncio.create_task(asyncio.to_thread(_sync_populate_telegram_id_if_blank, username, telegram_id))

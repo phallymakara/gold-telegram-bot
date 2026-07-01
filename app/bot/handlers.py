@@ -51,11 +51,30 @@ from app.constants.callback import (
 
 @restricted
 async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    context.user_data.clear()
-    await update.message.reply_text(
-        t("choose_lang", "EN"),
-        reply_markup=LANG_MENU,
-    )
+    is_slash_start = update.message and update.message.text == "/start"
+    
+    if is_slash_start:
+        context.user_data.clear()
+        await update.message.reply_text(
+            t("choose_lang", "EN"),
+            reply_markup=LANG_MENU,
+        )
+        return
+
+    # If it is a generic text message during an active session, guide the user
+    lang = context.user_data.get("lang", "EN")
+    if "selected_slot" in context.user_data:
+        msg = (
+            "⚠️ Please use the buttons provided above to complete your order, or send /start to start a new order.\n\n"
+            "⚠️ សូមប្រើប៊ូតុងដែលបានផ្តល់ជូនខាងលើដើម្បីបញ្ចប់ការបញ្ជាទិញរបស់អ្នក ឬផ្ញើ /start ដើម្បីចាប់ផ្តើមថ្មី។"
+        )
+        await update.message.reply_text(msg)
+    else:
+        # If no active session, show the main menu or choose language
+        await update.message.reply_text(
+            t("choose_lang", lang),
+            reply_markup=LANG_MENU,
+        )
 
 
 @restricted
@@ -110,14 +129,14 @@ async def handle_cancel_order(query, context: ContextTypes.DEFAULT_TYPE):
     lang = context.user_data.get("lang", "EN")
     context.user_data.clear()
     context.user_data["lang"] = lang
-    await query.message.reply_text(t("order_cancelled", lang))
+    await query.edit_message_text(text=t("order_cancelled", lang))
 
 
 async def handle_back_main(query, context: ContextTypes.DEFAULT_TYPE):
     lang = context.user_data.get("lang", "EN")
     context.user_data.clear()
     context.user_data["lang"] = lang
-    await query.message.reply_text(
-        t("welcome", lang),
+    await query.edit_message_text(
+        text=t("welcome", lang),
         reply_markup=build_main_menu(lang),
     )

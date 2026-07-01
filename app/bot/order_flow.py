@@ -52,8 +52,12 @@ async def handle_slot_selection(query, context: ContextTypes.DEFAULT_TYPE):
     stock = slot.get("stock_kg", 0) if slot else 0
     logger.info("handle_slot_selection | slot_date=%s | order_type=%s | slot=%s | stock=%s", slot_date, order_type, slot, stock)
 
-    await query.message.reply_text(
-        msg,
+    if order_type == BUY and stock <= 0:
+        await query.answer(t("slot_out_of_stock", lang), show_alert=True)
+        return
+
+    await query.edit_message_text(
+        text=msg,
         reply_markup=build_quantity_keyboard(stock=stock, order_type=order_type, lang=lang),
     )
 
@@ -86,8 +90,8 @@ async def handle_quantity_selection(query, context: ContextTypes.DEFAULT_TYPE):
         f"{t('confirm_prompt', lang)}"
     )
 
-    await query.message.reply_text(
-        summary,
+    await query.edit_message_text(
+        text=summary,
         reply_markup=build_confirmation_keyboard(selected_slot, order_type, lang),
     )
 
@@ -126,6 +130,10 @@ async def handle_confirm_order(
 
         context.user_data.clear()
         context.user_data["lang"] = lang
+
+        # Edit the confirmation message in-place to remove the confirmation buttons and show success text
+        confirmed_text = t("order_confirmed", lang).strip()
+        await query.edit_message_text(text=f"{confirmed_text}\n{t('order_id', lang)}: {order.order_id}")
 
         success_msg = generate_invoice_text(order, user)
 

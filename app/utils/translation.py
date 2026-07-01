@@ -34,6 +34,7 @@ TRANSLATIONS = {
         "my_orders_title": "My Orders\n\n",
         "switch_lang": "🌐 Switch Language",
         "unauthorized": "⚠️ Sorry, you do not have permission to use this bot. Please contact the administrator. \n\n សូមអភ័យទោស អ្នកមិនមានសិទ្ធិប្រើប្រាស់ Bot នេះទេ។ សូមទាក់ទងអ្នកគ្រប់គ្រង។",
+        "slot_out_of_stock": "⚠️ Sorry, this slot is out of stock. Please select another slot.",
     },
     "KH": {
         "welcome": "សូមស្វាគមន៍មកកាន់ Gold Trading Bot 🚀\n\nសូមជ្រើសរើសជម្រើសមួយ:",
@@ -67,6 +68,7 @@ TRANSLATIONS = {
         "my_orders_title": "📋 ការបញ្ជាទិញរបស់ខ្ញុំ\n\n",
         "switch_lang": "🌐 ប្តូរភាសា",
         "unauthorized": "⚠️ សូមអភ័យទោស អ្នកមិនមានសិទ្ធិប្រើប្រាស់ Bot នេះទេ។ សូមទាក់ទងអ្នកគ្រប់គ្រង។",
+        "slot_out_of_stock": "⚠️ សូមអភ័យទោស Slot នេះអស់ស្តុកហើយ។ សូមជ្រើសរើស Slot ផ្សេងទៀត។",
     }
 }
 

@@ -28,8 +28,9 @@ LANG_MENU = InlineKeyboardMarkup([
 
 MAIN_MENU = InlineKeyboardMarkup([
     [
-        InlineKeyboardButton("🟢 BUY", callback_data=BUY),
         InlineKeyboardButton("🔴 SELL", callback_data=SELL),
+        InlineKeyboardButton("🟢 BUY", callback_data=BUY),
+        
     ],
     [
         InlineKeyboardButton("📋 My Orders", callback_data=MY_ORDERS),
@@ -40,8 +41,9 @@ MAIN_MENU = InlineKeyboardMarkup([
 def build_main_menu(lang="EN"):
     return InlineKeyboardMarkup([
         [
-            InlineKeyboardButton(t("buy", lang), callback_data=BUY),
             InlineKeyboardButton(t("sell", lang), callback_data=SELL),
+            InlineKeyboardButton(t("buy", lang), callback_data=BUY),
+            
         ],
         [
             InlineKeyboardButton(t("my_orders", lang), callback_data=MY_ORDERS),

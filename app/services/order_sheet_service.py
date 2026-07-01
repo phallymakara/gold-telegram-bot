@@ -43,4 +43,4 @@ def get_orders_by_telegram_id(telegram_id: str):
         return all_orders
 
     except requests.exceptions.RequestException:
-        return []
+        return []                                             
